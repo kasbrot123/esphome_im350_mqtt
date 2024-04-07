@@ -1,14 +1,16 @@
 // Using UART2 for reading the data from the smart meter, if you use the UART0 you can not upload new code to the board cause its blocked while reading from the meter!
 int uart2_rx_gpio = 16;
 int uart2_tx_gpio = 17;
+
 int data_request_gpio = 26;
-int led_builtin = 2;   
+int led_builtin = 2;
+
 
 // IP - Network settings of your ESP
-IPAddress local_IP(10, 0, 0, 123); // Set your Static IP address 
-IPAddress gateway(10, 0, 0, 1);   // Set your Gateway IP address
-IPAddress subnet(255, 255, 255, 0); // Set your Subnet IP address
-IPAddress primaryDNS(10, 0, 0, 1);  
+// IPAddress local_IP(10, 0, 0, 123); // Set your Static IP address 
+// IPAddress gateway(10, 0, 0, 1);   // Set your Gateway IP address
+// IPAddress subnet(255, 255, 255, 0); // Set your Subnet IP address
+// IPAddress primaryDNS(10, 0, 0, 1);  
 // IPAddress secondaryDNS(8, 8, 4, 4); 
 
 //char mqtt_server[] = "test.mosquitto.org"; //Test mqttbroker

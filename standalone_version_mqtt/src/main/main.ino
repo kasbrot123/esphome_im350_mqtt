@@ -403,13 +403,15 @@ void setup() {
 
 void reconnect() {
   // Loop until we're reconnected
+  //while (!client.connected()) {
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
     // Attempt to connect
-    if (client.connect("ingmarsretro")) {
+    if (client.connect(MQTT_CLIENT_NAME, MQTT_USER, MQTT_PASS)) {
       Serial.println("connected");
       // Subscribe
-      client.subscribe("esp32/output");
+      //client.subscribe("esp32/output");
+      client.subscribe("homeassistant/esp32/output");
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
@@ -436,7 +438,7 @@ void loop() {
     // Send RSSI of MQTT Server, so ESP is up
     char RSSIstr[8];
     dtostrf(WiFi.RSSI(), 1, 2, RSSIstr);
-    client.publish("ingmarsretro/SM_Kelag/RSSI", RSSIstr);
+    client.publish("homeassistant/esp", RSSIstr);
     Serial.printf("RSSI: %d dBm\n", WiFi.RSSI());
     // TelnetStream.printf("RSSI: %d dBm\n", WiFi.RSSI());
     Serial.println(WiFi.BSSIDstr());

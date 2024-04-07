@@ -120,6 +120,8 @@ void parse_timestamp(byte array[]) {
   message_second = array[13];
 }
 
+
+// Why the hell we do that?
 // used to see if encrypted data are correct...
 bool validate_message_date() {
   Serial.println();
@@ -161,7 +163,7 @@ int readMessage() {
     unsigned short serial_cnt = 0;
     if (use_test_data == true) {
         Serial.println("USE TEST DATA IS ACTIVE!");
-        TelnetStream.println("USE TEST DATA IS ACTIVE!");
+        // TelnetStream.println("USE TEST DATA IS ACTIVE!");
         serial_cnt = 123;
         for (unsigned int i = 0; i < 123; i++) {
             message[i] = testData[i];
@@ -169,7 +171,7 @@ int readMessage() {
     }
     else {
         Serial.println("Try to read data from serial port.");
-        TelnetStream.println("Try to read data from serial port.");
+        // TelnetStream.println("Try to read data from serial port.");
         
         memset(message, 0, message_length);
 
@@ -304,22 +306,24 @@ void printBytesToHex(byte array[], unsigned int len) {
   
   for (unsigned int i = 0; i < len; i++) {
     Serial.print(message[i], HEX);
-    TelnetStream.print(message[i], HEX);
+    // TelnetStream.print(message[i], HEX);
   }
   Serial.print("\n");
-  TelnetStream.print("\n");
+  // TelnetStream.print("\n");
 }
 
-void SerialTelnetPrint(char msg[]) {
-  Serial.println(msg);
-  Serial.println(msg);
-}
+// todo: PrintMessage(char msg) -> so every notification can be included
+// void SerialTelnetPrint(char msg[]) {
+//   Serial.println(msg);
+//   Serial.println(msg);
+// }
 
 
 void setup() {
+
     btStop(); // disable bluetooth
     Serial.begin(115200);
-    Serial2.begin(115200, SERIAL_8N1, uart2_rx_gpio, uart2_tx_gpio);
+    // Serial2.begin(115200, SERIAL_8N1, uart2_rx_gpio, uart2_tx_gpio);
     
     //connect to WiFi
     // Configures static IP address
@@ -327,20 +331,20 @@ void setup() {
       //Serial.println("STA Failed to configure");
       //}
 
-    Serial.printf("Connecting to %s ", wifi_ssid);
-    WiFi.mode(WIFI_STA);   //station mode: the ESP32 connects to an access point
-    WiFi.begin(wifi_ssid, wifi_password);
+    Serial.printf("Connecting to %s ", WIFI_SSID);
+    // WiFi.mode(WIFI_STA);   //station mode: the ESP32 connects to an access point
+    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
     
     while (WiFi.waitForConnectResult() != WL_CONNECTED) {
       Serial.println("Connection Failed! Rebooting...");
       delay(5000);
+      // todo: I think it is better to just reconnect?
       ESP.restart();
     }
    
 
-   
-    //mqtt
-    client.setServer(mqtt_server, 1883);
+    // mqtt client
+    client.setServer(MQTT_SERVER, MQTT_SERVER_PORT);
     //client.setCallback(callback);  
 
   // Port defaults to 3232
@@ -393,7 +397,8 @@ void setup() {
     getLocalTime();
     printLocalTime();
 
-    TelnetStream.begin();
+    // Do not need Telnet Stream
+    // TelnetStream.begin();
 }
 
 void reconnect() {
@@ -418,84 +423,93 @@ void reconnect() {
 void loop() {
     ArduinoOTA.handle();
 
-     if (!client.connected()) {
-    reconnect();}
-         
+    if (!client.connected()) {
+        reconnect();
+    }
+
     //init and get the time
     configTime(gmtOffset_sec, daylightOffset_sec, ntp_server);
     getLocalTime();
     printLocalTime();
-    
 
+
+    // Send RSSI of MQTT Server, so ESP is up
     char RSSIstr[8];
     dtostrf(WiFi.RSSI(), 1, 2, RSSIstr);
     client.publish("ingmarsretro/SM_Kelag/RSSI", RSSIstr);
     Serial.printf("RSSI: %d dBm\n", WiFi.RSSI());
-    TelnetStream.printf("RSSI: %d dBm\n", WiFi.RSSI());
+    // TelnetStream.printf("RSSI: %d dBm\n", WiFi.RSSI());
     Serial.println(WiFi.BSSIDstr());
-    TelnetStream.println(WiFi.BSSIDstr());
+    // TelnetStream.println(WiFi.BSSIDstr());
 
+
+    // read the smart meter message
     readMessage();
     if (message[0] == start_byte and message[sizeof(message)-1] == stop_byte) {
       Serial.println("Got message from meter, try to decrypt.");
-      TelnetStream.println("Got message from meter, try to decrypt.");
+      // TelnetStream.println("Got message from meter, try to decrypt.");
       Serial.print("ReceivedMessage: ");
-      TelnetStream.print("ReceivedMessage: ");
+      // TelnetStream.print("ReceivedMessage: ");
       printBytesToHex(message, (sizeof(message)/sizeof(message[0])));
 
-      init_vector(&Vector_SM,"Vector_SM",sm_decryption_key); 
+      // todo: why initialize the same vector in the loop? nothing changes ?
+      init_vector(&Vector_SM, "Vector_SM", sm_decryption_key); 
 
       // print decryption details
       Serial.print("IV: ");
-      TelnetStream.print("IV: ");
+      // TelnetStream.print("IV: ");
       printBytesToHex(Vector_SM.iv, (sizeof(Vector_SM.iv)/sizeof(Vector_SM.iv[0])));
       Serial.print("Key: ");
-      TelnetStream.print("Key: ");
+      // TelnetStream.print("Key: ");
       printBytesToHex(Vector_SM.key, (sizeof(Vector_SM.key)/sizeof(Vector_SM.key[0])));
       Serial.print("Authdata: ");
-      TelnetStream.print("Authdata: ");
+      // TelnetStream.print("Authdata: ");
       printBytesToHex(Vector_SM.authdata, (sizeof(Vector_SM.authdata)/sizeof(Vector_SM.authdata[0])));
       Serial.print("Tag: ");
-      TelnetStream.print("Tag: ");
+      // TelnetStream.print("Tag: ");
       printBytesToHex(Vector_SM.tag, (sizeof(Vector_SM.tag)/sizeof(Vector_SM.tag[0])));
       Serial.print("Encrypted Data (Ciphertext): ");
-      TelnetStream.print("Encrypted Data (Ciphertext): ");
+      // TelnetStream.print("Encrypted Data (Ciphertext): ");
       printBytesToHex(Vector_SM.ciphertext, (sizeof(Vector_SM.ciphertext)/sizeof(Vector_SM.ciphertext[0])));
 
       decrypt_text(&Vector_SM);
       Serial.print("Decrypted Data: ");
-      TelnetStream.print("Decrypted Data: ");
+      // TelnetStream.print("Decrypted Data: ");
       printBytesToHex(buffer, (sizeof(buffer)/sizeof(buffer[0])));
 
       Serial.print("======Decrypted Parsed Data======\n");
-      TelnetStream.print("======Decrypted Parsed Data======\n");
+      // TelnetStream.print("======Decrypted Parsed Data======\n");
       parse_message(buffer);
       Serial.print("======Decrypted Parsed Data======\n");
-      TelnetStream.print("======Decrypted Parsed Data======\n");
+      // TelnetStream.print("======Decrypted Parsed Data======\n");
 
       parse_timestamp(buffer);
 
-      if (validate_message_date()) {
-        Serial.println("Do something.");
-        TelnetStream.println("Do something.");
-      }
-      else {
-        Serial.println("Do nothing.");
-        TelnetStream.println("Do nothing.");
-      }
+      // No Validation
+      // I mean it is already encrypted why should it not be the real data??
+      //
+      // if (validate_message_date()) {
+      //   Serial.println("Do something.");
+      //   // TelnetStream.println("Do something.");
+      // }
+      // else {
+      //   Serial.println("Do nothing.");
+      //   // TelnetStream.println("Do nothing.");
+      // }
 
     }
     else {
       Serial.println("Message not starting/ending with 0xE7, skip this message!");
-      TelnetStream.println("Message not starting/ending with 0xE7, skip this message!");
+      // TelnetStream.println("Message not starting/ending with 0xE7, skip this message!");
       Serial.print("Received Message: ");
-      TelnetStream.print("Received Message: ");
+      // TelnetStream.print("Received Message: ");
       printBytesToHex(message, (sizeof(message)/sizeof(message[0])));
     }
 
+
     delay(1000);
     Serial.println("waiting 1 second...");
-    TelnetStream.println("waiting 1 second...");
+    // TelnetStream.println("waiting 1 second...");
     Serial.println("reset");
-    TelnetStream.println("reset");
+    // TelnetStream.println("reset");
 }

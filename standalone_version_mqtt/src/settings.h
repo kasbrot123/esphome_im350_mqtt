@@ -11,8 +11,6 @@ IPAddress subnet(255, 255, 255, 0); // Set your Subnet IP address
 IPAddress primaryDNS(10, 0, 0, 1);  
 // IPAddress secondaryDNS(8, 8, 4, 4); 
 
-// IP - Address of your MQTT Broker
-const char* mqtt_server = "10.0.0.222";
 //char mqtt_server[] = "test.mosquitto.org"; //Test mqttbroker
 //const char* mqtt_server = "test.mosquitto.org";
 

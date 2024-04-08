@@ -323,7 +323,7 @@ void setup() {
 
     btStop(); // disable bluetooth
     Serial.begin(115200);
-    // Serial2.begin(115200, SERIAL_8N1, uart2_rx_gpio, uart2_tx_gpio);
+    Serial2.begin(115200, SERIAL_8N1, uart2_rx_gpio, uart2_tx_gpio);
     
     //connect to WiFi
     // Configures static IP address

@@ -8,7 +8,7 @@
 
 #include <Arduino.h>
 #include <ArduinoOTA.h>
-//#include <TelnetStream.h>
+#include <TelnetStream.h>
 #include <Crypto.h>
 #include <AES.h>
 #include <GCM.h> // Crypto
@@ -398,7 +398,7 @@ void setup() {
     printLocalTime();
 
     // Do not need Telnet Stream
-    // TelnetStream.begin();
+    TelnetStream.begin();
 }
 
 void reconnect() {
@@ -440,9 +440,9 @@ void loop() {
     dtostrf(WiFi.RSSI(), 1, 2, RSSIstr);
     client.publish("homeassistant/esp", RSSIstr);
     Serial.printf("RSSI: %d dBm\n", WiFi.RSSI());
-    // TelnetStream.printf("RSSI: %d dBm\n", WiFi.RSSI());
+    TelnetStream.printf("RSSI: %d dBm\n", WiFi.RSSI());
     Serial.println(WiFi.BSSIDstr());
-    // TelnetStream.println(WiFi.BSSIDstr());
+    TelnetStream.println(WiFi.BSSIDstr());
 
 
     // read the smart meter message
@@ -502,16 +502,16 @@ void loop() {
     }
     else {
       Serial.println("Message not starting/ending with 0xE7, skip this message!");
-      // TelnetStream.println("Message not starting/ending with 0xE7, skip this message!");
+      TelnetStream.println("Message not starting/ending with 0xE7, skip this message!");
       Serial.print("Received Message: ");
-      // TelnetStream.print("Received Message: ");
+      TelnetStream.print("Received Message: ");
       printBytesToHex(message, (sizeof(message)/sizeof(message[0])));
     }
 
 
     delay(1000);
     Serial.println("waiting 1 second...");
-    // TelnetStream.println("waiting 1 second...");
+    TelnetStream.println("waiting 1 second...");
     Serial.println("reset");
-    // TelnetStream.println("reset");
+    TelnetStream.println("reset");
 }

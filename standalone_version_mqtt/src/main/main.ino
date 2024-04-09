@@ -438,7 +438,7 @@ void reconnect() {
     // Serial.print("Attempting MQTT connection...");
     // Attempt to connect
     if (client.connect(MQTT_CLIENT_NAME, MQTT_USER, MQTT_PASS)) {
-      PrintMessage("connected");
+      PrintMessageln("connected");
       // Serial.println("connected");
       // Subscribe
       //client.subscribe("esp32/output");
@@ -446,7 +446,7 @@ void reconnect() {
     } else {
       PrintMessage("failed, rc=");
       PrintMessage(client.state());
-      PrintMessage(" try again in 5 seconds");
+      PrintMessageln(", try again in 5 seconds");
       // Serial.print("failed, rc=");
       // Serial.print(client.state());
       // Serial.println(" try again in 5 seconds");
@@ -476,7 +476,7 @@ void loop() {
     PrintMessage("RSSI: %d dBm\n", WiFi.RSSI());
     // Serial.printf("RSSI: %d dBm\n", WiFi.RSSI());
     // TelnetStream.printf("RSSI: %d dBm\n", WiFi.RSSI());
-    PrintMessage(WiFi.BSSIDstr());
+    PrintMessageln(WiFi.BSSIDstr());
     // Serial.println(WiFi.BSSIDstr());
     // TelnetStream.println(WiFi.BSSIDstr());
 
@@ -484,7 +484,7 @@ void loop() {
     // read the smart meter message
     readMessage();
     if (message[0] == start_byte and message[sizeof(message)-1] == stop_byte) {
-      PrintMessage("Got message from meter, try to decrypt.");
+      PrintMessageln("Got message from meter, try to decrypt.");
       // Serial.println("Got message from meter, try to decrypt.");
       // TelnetStream.println("Got message from meter, try to decrypt.");
       PrintMessage("ReceivedMessage: ");
@@ -524,7 +524,7 @@ void loop() {
       printBytesToHex(buffer, (sizeof(buffer)/sizeof(buffer[0])));
 
 
-      PrintMessage("======Decrypted Parsed Data======\n");
+      PrintMessageln("======Decrypted Parsed Data======");
       // Serial.print("======Decrypted Parsed Data======\n");
       // TelnetStream.print("======Decrypted Parsed Data======\n");
       parse_message(buffer);
@@ -547,7 +547,7 @@ void loop() {
 
     }
     else {
-      PrintMesssage("Message not starting/ending with 0xE7, skip this message!");
+      PrintMesssageln("Message not starting/ending with 0xE7, skip this message!");
       PrintMesssage("Received Message: ");
       // Serial.println("Message not starting/ending with 0xE7, skip this message!");
       // TelnetStream.println("Message not starting/ending with 0xE7, skip this message!");
@@ -557,11 +557,11 @@ void loop() {
     }
 
 
+    PrintMessageln("waiting 1 second...");
     delay(1000);
-    PrintMessage("waiting 1 second...");
     // Serial.println("waiting 1 second...");
     // TelnetStream.println("waiting 1 second...");
-    PrintMessage("reset");
+    PrintMessageln("reset");
     // Serial.println("reset");
     // TelnetStream.println("reset");
 }

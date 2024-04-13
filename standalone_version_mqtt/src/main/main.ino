@@ -170,88 +170,96 @@ bool validate_message_date() {
   }
 }
 
-int readMessage() {
+int readMessage(int data_request_gpio) {
     unsigned short serial_cnt = 0;
-    if (use_test_data == true) {
-        Serial.println("USE TEST DATA IS ACTIVE!");
-        TelnetStream.println("USE TEST DATA IS ACTIVE!");
-        serial_cnt = 123;
-        for (unsigned int i = 0; i < 123; i++) {
-            message[i] = testData[i];
+    // if (use_test_data == true) {
+    //     Serial.println("USE TEST DATA IS ACTIVE!");
+    //     TelnetStream.println("USE TEST DATA IS ACTIVE!");
+    //     serial_cnt = 123;
+    //     for (unsigned int i = 0; i < 123; i++) {
+    //         message[i] = testData[i];
+    //     }
+    // }
+
+    // else {
+
+    unsigned long time_start_reading = millis();
+    long time_read_attempt = millis();
+    unsigned long UART_TIMEOUT = 10000;
+
+    int cnt = 0;
+    int readBuffer = 250;
+
+    Serial.println("Try to read data from serial port.");
+    TelnetStream.println("Try to read data from serial port.");
+    Serial.println("Set Request Pin");
+    TelnetStream.println("Set Request Pin");
+    // set request pin to get data
+
+    digitalWrite(data_request_gpio, HIGH);
+
+    // delay(delay_before_reading_data);
+
+
+    while (true) {
+        time_read_attempt = millis();
+        if ((time_read_attempt - time_start_reading) > UART_TIMEOUT) {
+            Serial.println("Timeout UART, no data received");
+            TelnetStream.println("Timeout UART, no data received");
+            return false;
+            // break;
         }
+        if (Serial2.available()) {
+            Serial.println("Serial2 is available");
+            TelnetStream.println("Serial2 is available");
+            // unsigned long requestMillis = millis();
+
+            // turn on led to show data is available
+            // digitalWrite(led_builtin, HIGH);
+            int return_byte;
+
+
+            while (Serial2.available())
+            {
+                // Reads the telegram untill it finds a return character
+                // That is after each line in the telegram
+                memset(message, 0, message_length);
+                // int len = Serial2.readBytesUntil('\n', message, message_length);
+
+                // DO SOMETHING WITH message
+                //Serial2.readBytes(message, message_length);
+                //Serial.print(message);
+                return_byte = Serial2.read();
+                Serial.print(return_byte, HEX);
+                TelnetStream.print(return_byte, HEX);
+                // print_byte_in_hex(return_byte);
+
+
+                // telegram[len] = '\n';
+                // telegram[len + 1] = 0;
+
+                // 
+                // bool result = decodeTelegram(len + 1);
+                // When the CRC is check which is also the end of the telegram
+                // if valid decode return true
+                // if (result)
+                // {
+                //     return true;
+                // }
+            }
+
+            Serial.println();
+            digitalWrite(data_request_gpio, LOW);
+            digitalWrite(led_builtin, LOW);
+
+        }
+
     }
 
-    else {
+    Serial.println("Done with reading from from serial port.");
+    TelnetStream.println("Done with reading from from serial port.");
 
-        unsigned long time_start_reading = millis();
-        unsigned long time_read_attempt = millis();
-        unsigned long UART_TIMEOUT = 10000;
-
-        int cnt = 0;
-        int readBuffer = 250;
-
-        Serial.println("Try to read data from serial port.");
-        TelnetStream.println("Try to read data from serial port.");
-        Serial.println("Set Request Pin");
-        TelnetStream.println("Set Request Pin");
-        // set request pin to get data
-        digitalWrite(data_request_gpio, HIGH);
-
-        // delay(delay_before_reading_data);
-
-
-        while (true) {
-            time_read_attempt = millis();
-            if ((time_read_attempt - time_start_reading) > UART_TIMEOUT) {
-                Serial.println("Timeout uart, no data received");
-                TelnetStream.println("Timeout uart, no data received");
-                break;
-            }
-            if (Serial2.available()) {
-                Serial.println("Serial2 is available");
-                TelnetStream.println("Serial2 is available");
-                // unsigned long requestMillis = millis();
-
-                // turn on led to show data is available
-                digitalWrite(led_builtin, HIGH);
-                int return_byte;
-
-
-                while (Serial2.available())
-                {
-                    // Reads the telegram untill it finds a return character
-                    // That is after each line in the telegram
-                    memset(message, 0, message_length);
-                    // int len = Serial2.readBytesUntil('\n', message, message_length);
-
-                    // DO SOMETHING WITH message
-                    //Serial2.readBytes(message, message_length);
-                    //Serial.print(message);
-                    return_byte = Serial2.read();
-                    Serial.print(return_byte);
-                    // print_byte_in_hex(return_byte);
-
-
-                    // telegram[len] = '\n';
-                    // telegram[len + 1] = 0;
-
-                    // 
-                    // bool result = decodeTelegram(len + 1);
-                    // When the CRC is check which is also the end of the telegram
-                    // if valid decode return true
-                    // if (result)
-                    // {
-                    //     return true;
-                    // }
-                }
-        
-                Serial.println();
-                digitalWrite(data_request_gpio, LOW);
-                digitalWrite(led_builtin, LOW);
-
-            }
-
-        }
+    return true;
 
 // solution from eps32_p1meter.ino / RosiersRobin
 //     if (Serial2.available())
@@ -292,11 +300,7 @@ int readMessage() {
         //   }
         // }
 
-    }
-  Serial.println("Done with reading from from serial port.");
-  TelnetStream.println("Done with reading from from serial port.");
-
-  return 0;
+    // }
 }
 
 void init_vector(Vector_GCM *vect, const char *Vect_name, byte *key_SM) {
@@ -400,14 +404,14 @@ void parse_message(byte array[]) {
 }
 
 
-void printBytesToHex(byte array[], unsigned int len) {
-  for (unsigned int i = 0; i < len; i++) {
-    Serial.print(message[i], HEX);
-    TelnetStream.print(message[i], HEX);
-  }
-  Serial.print("\n");
-  TelnetStream.print("\n");
-}
+// void printBytesToHex(byte array[], unsigned int len) {
+//   for (unsigned int i = 0; i < len; i++) {
+//     Serial.print(message[i], HEX);
+//     TelnetStream.print(message[i], HEX);
+//   }
+//   Serial.print("\n");
+//   TelnetStream.print("\n");
+// }
 
 
 void setup() {
@@ -419,7 +423,19 @@ void setup() {
     Serial.begin(115200);
     Serial2.begin(115200, SERIAL_8N1, uart2_rx_gpio, uart2_tx_gpio);
     pinMode(led_builtin, OUTPUT);
-    pinMode(data_request_gpio, OUTPUT);
+    pinMode(DEBUG_LED_WIFI_GPIO, OUTPUT);
+    // pinMode(DEBUG_LED_SM1_GPIO, OUTPUT);
+    // pinMode(DEBUG_LED_SM2_GPIO, OUTPUT);
+    pinMode(DATA_REQUEST_GPIO_SM1, OUTPUT);
+    pinMode(DATA_REQUEST_GPIO_SM2, OUTPUT);
+
+    digitalWrite(DEBUG_LED_WIFI_GPIO, HIGH);
+    digitalWrite(DEBUG_LED_SM1_GPIO, HIGH);
+    digitalWrite(DEBUG_LED_SM2_GPIO, HIGH);
+    delay(1000);
+    digitalWrite(DEBUG_LED_WIFI_GPIO, LOW);
+    digitalWrite(DEBUG_LED_SM1_GPIO, LOW);
+    digitalWrite(DEBUG_LED_SM2_GPIO, LOW);
     
     //connect to WiFi
     // Configures static IP address
@@ -434,7 +450,9 @@ void setup() {
 
     while (WiFi.waitForConnectResult() != WL_CONNECTED) {
       Serial.println("Connection Failed! Rebooting...");
+      digitalWrite(DEBUG_LED_WIFI_GPIO, HIGH);
       delay(5000);
+      digitalWrite(DEBUG_LED_WIFI_GPIO, LOW);
       ESP.restart();
     }
 
@@ -505,8 +523,12 @@ void reconnect() {
     while (WiFi.waitForConnectResult() != WL_CONNECTED) {
         Serial.print("Wifi connection lost. Wait 5 s for connection...");
         TelnetStream.print("Wifi connection lost. Wait 5 s for connection...");
-        delay(5000);
+        digitalWrite(DEBUG_LED_WIFI_GPIO, HIGH);
+        delay(4000);
+        digitalWrite(DEBUG_LED_WIFI_GPIO, LOW);
+        delay(1000);
     }
+
     // reconnect mqtt
     while (!client.connected()) {
         Serial.print("Attempting MQTT connection...");
@@ -531,8 +553,10 @@ void reconnect() {
 
 
 void loop() {
-    // ArduinoOTA.handle();
+    // for updates
+    ArduinoOTA.handle();
 
+    // if MQTT is not connected
     if (!client.connected()) {
         reconnect();
     }
@@ -549,10 +573,11 @@ void loop() {
 
 
     // READ DATA
-    // readMessage();
-
-    // SEND DATA
-    // sendMessage();
+    // if (readMessage(DATA_REQUEST_GPIO_1)) {
+        // decodeMessage();
+        // parseMessage();
+        // sendMessage();
+    // };
 
 
     Serial.println("waiting 1 second...");

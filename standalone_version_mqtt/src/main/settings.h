@@ -2,8 +2,15 @@
 int uart2_rx_gpio = 16;
 int uart2_tx_gpio = 17;
 
-int data_request_gpio = 26;
+// int data_request_gpio = 26;
+int DATA_REQUEST_GPIO_1 = 26;
+int DATA_REQUEST_GPIO_2 = 27;
+int DEBUG_LED_WIFI_GPIO = 23;
+int DEBUG_LED_SM1_GPIO = 200;
+int DEBUG_LED_SM2_GPIO = 200;
 int led_builtin = 2;
+
+
 
 
 // IP - Network settings of your ESP

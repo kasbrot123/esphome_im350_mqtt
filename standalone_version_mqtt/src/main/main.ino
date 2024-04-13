@@ -199,7 +199,7 @@ int readMessage() {
 
         unsigned long time_start_reading = millis();
         unsigned long time_read_attempt = millis();
-        unsigned long UART_TIMEOUT = 10000
+        unsigned long UART_TIMEOUT = 10000;
 
         int cnt = 0;
         int readBuffer = 250;
@@ -215,8 +215,9 @@ int readMessage() {
         // delay(delay_before_reading_data);
 
 
-        while () {
-            if ((time_read_attemt - time_start_reading) < UART_TIMEOUT) {
+        while (true) {
+            time_read_attempt = millis();
+            if ((time_read_attempt - time_start_reading) > UART_TIMEOUT) {
                 Serial.println("Timeout uart, no data received");
                 TelnetStream.println("Timeout uart, no data received");
                 break;
@@ -239,8 +240,8 @@ int readMessage() {
                     // int len = Serial2.readBytesUntil('\n', message, message_length);
 
                     // DO SOMETHING WITH message
-                    // Serial2.readBytes(message, message_length)
-                    // Serial.print(message)
+                    //Serial2.readBytes(message, message_length);
+                    //Serial.print(message);
                     return_byte = Serial2.read();
                     Serial.print(return_byte);
                     // print_byte_in_hex(return_byte);
@@ -574,25 +575,25 @@ void loop() {
     }
 
     //init and get the time
-    configTime(gmtOffset_sec, daylightOffset_sec, ntp_server);
-    getLocalTime();
-    printLocalTime();
+    //configTime(gmtOffset_sec, daylightOffset_sec, ntp_server);
+    //getLocalTime();
+    //printLocalTime();
 
 
     // Send RSSI of MQTT Server, so ESP is up
     char RSSIstr[8];
     dtostrf(WiFi.RSSI(), 1, 2, RSSIstr);
-    client.publish("homeassistant/esp", RSSIstr);
+    //client.publish("homeassistant/esp", RSSIstr);
     //PrintMessage("RSSI: %d dBm\n", WiFi.RSSI());
     Serial.printf("RSSI: %d dBm\n", WiFi.RSSI());
-    TelnetStream.printf("RSSI: %d dBm\n", WiFi.RSSI());
+    //TelnetStream.printf("RSSI: %d dBm\n", WiFi.RSSI());
     //PrintMessageln(WiFi.BSSIDstr());
     Serial.println(WiFi.BSSIDstr());
-    TelnetStream.println(WiFi.BSSIDstr());
+    //TelnetStream.println(WiFi.BSSIDstr());
 
 
     // read the smart meter message
-    readMessage();
+    // readMessage();
     // if (message[0] == start_byte and message[sizeof(message)-1] == stop_byte) {
     //   // PrintMessageln("Got message from meter, try to decrypt.");
     //   Serial.println("Got message from meter, try to decrypt.");
@@ -669,9 +670,11 @@ void loop() {
 
     // PrintMessageln("waiting 1 second...");
     Serial.println("waiting 1 second...");
-    TelnetStream.println("waiting 1 second...");
+    //TelnetStream.println("waiting 1 second...");
+    Serial.println("new michi");
+    //TelnetStream.println("new michi");
     delay(1000);
     // PrintMessageln("reset");
     Serial.println("reset");
-    TelnetStream.println("reset");
+    //TelnetStream.println("reset");
 }

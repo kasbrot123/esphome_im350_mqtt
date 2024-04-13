@@ -192,7 +192,7 @@ int readMessage() {
         pinMode(led_builtin, OUTPUT);
         pinMode(data_request_gpio, OUTPUT);
         digitalWrite(led_builtin, HIGH);
-        digitalWrite(data_request_gpio,HIGH);
+        digitalWrite(data_request_gpio, HIGH);
         unsigned long requestMillis = millis();
         delay(delay_before_reading_data);
         while ((Serial2.available()) && (cnt < readBuffer) && (millis()-requestMillis <= max_wait_time_for_reading_data)) {
@@ -206,7 +206,7 @@ int readMessage() {
         }
 
         digitalWrite(led_builtin, LOW);
-        digitalWrite(data_request_gpio,LOW);
+        digitalWrite(data_request_gpio, LOW);
     }
   PrintMessageln("Done with reading from from serial port.");
   // Serial.println("Done with reading from from serial port.");

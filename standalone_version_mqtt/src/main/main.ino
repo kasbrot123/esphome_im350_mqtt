@@ -83,6 +83,15 @@ void printLocalTime() {
   }
 }
 
+void print_byte_in_hex(char X) {
+
+   if (X < 16) {Serial.print("0");}
+
+   Serial.print(X, HEX);
+
+}
+
+
 void print_array(byte array[], unsigned int len)
 {
   char text_buffer[len];
@@ -179,39 +188,105 @@ int readMessage() {
             message[i] = testData[i];
         }
     }
+
     else {
-        PrintMessageln("Try to read data from serial port.");
-        // Serial.println("Try to read data from serial port.");
-        // TelnetStream.println("Try to read data from serial port.");
+        // PrintMessageln("Try to read data from serial port.");
+        Serial.println("Try to read data from serial port.");
+        TelnetStream.println("Try to read data from serial port.");
         
-        memset(message, 0, message_length);
 
         int cnt = 0;
         int readBuffer = 250;
 
-        pinMode(led_builtin, OUTPUT);
-        pinMode(data_request_gpio, OUTPUT);
-        digitalWrite(led_builtin, HIGH);
-        digitalWrite(data_request_gpio, HIGH);
-        unsigned long requestMillis = millis();
-        delay(delay_before_reading_data);
-        while ((Serial2.available()) && (cnt < readBuffer) && (millis()-requestMillis <= max_wait_time_for_reading_data)) {
-          message[cnt] = Serial2.read();
-          if (message[0] != start_byte && cnt == 0) {
-            continue;
-          }
-          else {
-            cnt++;
-          }
-        }
 
-        digitalWrite(led_builtin, LOW);
-        digitalWrite(data_request_gpio, LOW);
+        delay(delay_before_reading_data);
+
+        if (Serial2.available()) {
+            Serial.println("Serial2 is available");
+            // prepare array
+            unsigned long requestMillis = millis();
+
+            // turn on led to show data is available
+            digitalWrite(led_builtin, HIGH);
+            digitalWrite(data_request_gpio, HIGH);
+            byte return_byte;
+
+
+            while (Serial2.available())
+            {
+                // Reads the telegram untill it finds a return character
+                // That is after each line in the telegram
+                // memset(message, 0, message_length);
+                // int len = Serial2.readBytesUntil('\n', message, message_length);
+
+                // DO SOMETHING WITH message
+                return_byte = Serial2.read();
+                print_byte_in_hex(return_byte);
+
+
+                // telegram[len] = '\n';
+                // telegram[len + 1] = 0;
+
+                // 
+                // bool result = decodeTelegram(len + 1);
+                // When the CRC is check which is also the end of the telegram
+                // if valid decode return true
+                // if (result)
+                // {
+                //     return true;
+                // }
+            }
+    
+            Serial.println();
+            digitalWrite(led_builtin, LOW);
+            digitalWrite(data_request_gpio, LOW);
+
+        }
+// solution from eps32_p1meter.ino / RosiersRobin
+//     if (Serial2.available())
+//     {
+// #ifdef DEBUG
+//         Serial.println("Serial2 is available");
+//         Serial.println("Memset telegram");
+// #endif
+//         memset(telegram, 0, sizeof(telegram));
+//         while (Serial2.available())
+//         {
+//             // Reads the telegram untill it finds a return character
+//             // That is after each line in the telegram
+//             int len = Serial2.readBytesUntil('\n', telegram, P1_MAXLINELENGTH);
+//
+//             telegram[len] = '\n';
+//             telegram[len + 1] = 0;
+//
+//             bool result = decodeTelegram(len + 1);
+//             // When the CRC is check which is also the end of the telegram
+//             // if valid decode return true
+//             if (result)
+//             {
+//                 return true;
+//             }
+//         }
+//     }
+
+
+        //
+        // while ((Serial2.available()) && (cnt < readBuffer) && (millis()-requestMillis <= max_wait_time_for_reading_data)) {
+        //   message[cnt] = Serial2.read();
+        //   if (message[0] != start_byte && cnt == 0) {
+        //     continue;
+        //   }
+        //   else {
+        //     cnt++;
+        //   }
+        // }
+
     }
   PrintMessageln("Done with reading from from serial port.");
   // Serial.println("Done with reading from from serial port.");
   //TelnetStream.println("Done with reading from from serial port.");
-  return (serial_cnt);
+  // return (serial_cnt);
+  return 0;
 }
 
 void init_vector(Vector_GCM *vect, const char *Vect_name, byte *key_SM) {
@@ -346,6 +421,10 @@ void setup() {
     btStop(); // disable bluetooth
     Serial.begin(115200);
     Serial2.begin(115200, SERIAL_8N1, uart2_rx_gpio, uart2_tx_gpio);
+
+    // led for reading smart meter
+    pinMode(led_builtin, OUTPUT);
+    pinMode(data_request_gpio, OUTPUT);
     
     //connect to WiFi
     // Configures static IP address
@@ -483,78 +562,78 @@ void loop() {
 
     // read the smart meter message
     readMessage();
-    if (message[0] == start_byte and message[sizeof(message)-1] == stop_byte) {
-      PrintMessageln("Got message from meter, try to decrypt.");
-      // Serial.println("Got message from meter, try to decrypt.");
-      // TelnetStream.println("Got message from meter, try to decrypt.");
-      PrintMessage("ReceivedMessage: ");
-      // Serial.print("ReceivedMessage: ");
-      // TelnetStream.print("ReceivedMessage: ");
-      printBytesToHex(message, (sizeof(message)/sizeof(message[0])));
-
-      // todo: why initialize the same vector in the loop? nothing changes ?
-      init_vector(&Vector_SM, "Vector_SM", sm_decryption_key); 
-
-      // print decryption details
-      PrintMessage("IV: ");
-      // Serial.print("IV: ");
-      // TelnetStream.print("IV: ");
-      printBytesToHex(Vector_SM.iv, (sizeof(Vector_SM.iv)/sizeof(Vector_SM.iv[0])));
-      PrintMessage("Key: ");
-      // Serial.print("Key: ");
-      // TelnetStream.print("Key: ");
-      printBytesToHex(Vector_SM.key, (sizeof(Vector_SM.key)/sizeof(Vector_SM.key[0])));
-      PrintMessage("Authdata: ");
-      // Serial.print("Authdata: ");
-      // TelnetStream.print("Authdata: ");
-      printBytesToHex(Vector_SM.authdata, (sizeof(Vector_SM.authdata)/sizeof(Vector_SM.authdata[0])));
-      PrintMessage("Tag: ");
-      // Serial.print("Tag: ");
-      // TelnetStream.print("Tag: ");
-      printBytesToHex(Vector_SM.tag, (sizeof(Vector_SM.tag)/sizeof(Vector_SM.tag[0])));
-      PrintMessage("Encrypted Data (Ciphertext): ");
-      // Serial.print("Encrypted Data (Ciphertext): ");
-      // TelnetStream.print("Encrypted Data (Ciphertext): ");
-      printBytesToHex(Vector_SM.ciphertext, (sizeof(Vector_SM.ciphertext)/sizeof(Vector_SM.ciphertext[0])));
-
-      decrypt_text(&Vector_SM);
-      PrintMessage("Decrypted Data: ");
-      // Serial.print("Decrypted Data: ");
-      // TelnetStream.print("Decrypted Data: ");
-      printBytesToHex(buffer, (sizeof(buffer)/sizeof(buffer[0])));
-
-
-      PrintMessageln("======Decrypted Parsed Data======");
-      // Serial.print("======Decrypted Parsed Data======\n");
-      // TelnetStream.print("======Decrypted Parsed Data======\n");
-      parse_message(buffer);
-      // Serial.print("======Decrypted Parsed Data======\n");
-      // TelnetStream.print("======Decrypted Parsed Data======\n");
-
-      parse_timestamp(buffer);
-
-      // No Validation
-      // I mean it is already encrypted why should it not be the real data??
-      //
-      // if (validate_message_date()) {
-      //   Serial.println("Do something.");
-      //   // TelnetStream.println("Do something.");
-      // }
-      // else {
-      //   Serial.println("Do nothing.");
-      //   // TelnetStream.println("Do nothing.");
-      // }
-
-    }
-    else {
-      PrintMesssageln("Message not starting/ending with 0xE7, skip this message!");
-      PrintMesssage("Received Message: ");
-      // Serial.println("Message not starting/ending with 0xE7, skip this message!");
-      // TelnetStream.println("Message not starting/ending with 0xE7, skip this message!");
-      // Serial.print("Received Message: ");
-      // TelnetStream.print("Received Message: ");
-      printBytesToHex(message, (sizeof(message)/sizeof(message[0])));
-    }
+    // if (message[0] == start_byte and message[sizeof(message)-1] == stop_byte) {
+    //   PrintMessageln("Got message from meter, try to decrypt.");
+    //   // Serial.println("Got message from meter, try to decrypt.");
+    //   // TelnetStream.println("Got message from meter, try to decrypt.");
+    //   PrintMessage("ReceivedMessage: ");
+    //   // Serial.print("ReceivedMessage: ");
+    //   // TelnetStream.print("ReceivedMessage: ");
+    //   printBytesToHex(message, (sizeof(message)/sizeof(message[0])));
+    //
+    //   // todo: why initialize the same vector in the loop? nothing changes ?
+    //   init_vector(&Vector_SM, "Vector_SM", sm_decryption_key); 
+    //
+    //   // print decryption details
+    //   PrintMessage("IV: ");
+    //   // Serial.print("IV: ");
+    //   // TelnetStream.print("IV: ");
+    //   printBytesToHex(Vector_SM.iv, (sizeof(Vector_SM.iv)/sizeof(Vector_SM.iv[0])));
+    //   PrintMessage("Key: ");
+    //   // Serial.print("Key: ");
+    //   // TelnetStream.print("Key: ");
+    //   printBytesToHex(Vector_SM.key, (sizeof(Vector_SM.key)/sizeof(Vector_SM.key[0])));
+    //   PrintMessage("Authdata: ");
+    //   // Serial.print("Authdata: ");
+    //   // TelnetStream.print("Authdata: ");
+    //   printBytesToHex(Vector_SM.authdata, (sizeof(Vector_SM.authdata)/sizeof(Vector_SM.authdata[0])));
+    //   PrintMessage("Tag: ");
+    //   // Serial.print("Tag: ");
+    //   // TelnetStream.print("Tag: ");
+    //   printBytesToHex(Vector_SM.tag, (sizeof(Vector_SM.tag)/sizeof(Vector_SM.tag[0])));
+    //   PrintMessage("Encrypted Data (Ciphertext): ");
+    //   // Serial.print("Encrypted Data (Ciphertext): ");
+    //   // TelnetStream.print("Encrypted Data (Ciphertext): ");
+    //   printBytesToHex(Vector_SM.ciphertext, (sizeof(Vector_SM.ciphertext)/sizeof(Vector_SM.ciphertext[0])));
+    //
+    //   decrypt_text(&Vector_SM);
+    //   PrintMessage("Decrypted Data: ");
+    //   // Serial.print("Decrypted Data: ");
+    //   // TelnetStream.print("Decrypted Data: ");
+    //   printBytesToHex(buffer, (sizeof(buffer)/sizeof(buffer[0])));
+    //
+    //
+    //   PrintMessageln("======Decrypted Parsed Data======");
+    //   // Serial.print("======Decrypted Parsed Data======\n");
+    //   // TelnetStream.print("======Decrypted Parsed Data======\n");
+    //   parse_message(buffer);
+    //   // Serial.print("======Decrypted Parsed Data======\n");
+    //   // TelnetStream.print("======Decrypted Parsed Data======\n");
+    //
+    //   parse_timestamp(buffer);
+    //
+    //   // No Validation
+    //   // I mean it is already encrypted why should it not be the real data??
+    //   //
+    //   // if (validate_message_date()) {
+    //   //   Serial.println("Do something.");
+    //   //   // TelnetStream.println("Do something.");
+    //   // }
+    //   // else {
+    //   //   Serial.println("Do nothing.");
+    //   //   // TelnetStream.println("Do nothing.");
+    //   // }
+    //
+    // }
+    // else {
+    //   PrintMesssageln("Message not starting/ending with 0xE7, skip this message!");
+    //   PrintMesssage("Received Message: ");
+    //   // Serial.println("Message not starting/ending with 0xE7, skip this message!");
+    //   // TelnetStream.println("Message not starting/ending with 0xE7, skip this message!");
+    //   // Serial.print("Received Message: ");
+    //   // TelnetStream.print("Received Message: ");
+    //   printBytesToHex(message, (sizeof(message)/sizeof(message[0])));
+    // }
 
 
     PrintMessageln("waiting 1 second...");

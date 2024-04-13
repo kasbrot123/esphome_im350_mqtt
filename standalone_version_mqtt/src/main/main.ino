@@ -1,5 +1,5 @@
 //this project was released as esphome_im350 / standalone_version to read serial data stream from im350 smartmeter
-//the decryption is done by the esp and decrypted data is output via USB-UART and via Telnetstream to 
+//the decryption is done by the esp and decrypted data is output via USB-UART and via TelnetStream to 
 //used this script as base for further coding
 //changes 22.03.2023 by ingmarsretro
 //ip address of ESP is to static ip ->  take a look in settings.h
@@ -196,58 +196,77 @@ int readMessage() {
     }
 
     else {
-        // PrintMessageln("Try to read data from serial port.");
-        Serial.println("Try to read data from serial port.");
-        TelnetStream.println("Try to read data from serial port.");
-        
+
+        unsigned long time_start_reading = millis();
+        unsigned long time_read_attempt = millis();
+        unsigned long UART_TIMEOUT = 10000
 
         int cnt = 0;
         int readBuffer = 250;
 
+        // PrintMessageln("Try to read data from serial port.");
+        Serial.println("Try to read data from serial port.");
+        TelnetStream.println("Try to read data from serial port.");
+        Serial.println("Set Request Pin");
+        TelnetStream.println("Set Request Pin");
+        // set request pin to get data
+        digitalWrite(data_request_gpio, HIGH);
 
-        delay(delay_before_reading_data);
-
-        if (Serial2.available()) {
-            Serial.println("Serial2 is available");
-            // prepare array
-            unsigned long requestMillis = millis();
-
-            // turn on led to show data is available
-            digitalWrite(led_builtin, HIGH);
-            digitalWrite(data_request_gpio, HIGH);
-            byte return_byte;
+        // delay(delay_before_reading_data);
 
 
-            while (Serial2.available())
-            {
-                // Reads the telegram untill it finds a return character
-                // That is after each line in the telegram
-                // memset(message, 0, message_length);
-                // int len = Serial2.readBytesUntil('\n', message, message_length);
-
-                // DO SOMETHING WITH message
-                return_byte = Serial2.read();
-                print_byte_in_hex(return_byte);
-
-
-                // telegram[len] = '\n';
-                // telegram[len + 1] = 0;
-
-                // 
-                // bool result = decodeTelegram(len + 1);
-                // When the CRC is check which is also the end of the telegram
-                // if valid decode return true
-                // if (result)
-                // {
-                //     return true;
-                // }
+        while () {
+            if ((time_read_attemt - time_start_reading) < UART_TIMEOUT) {
+                Serial.println("Timeout uart, no data received");
+                TelnetStream.println("Timeout uart, no data received");
+                break;
             }
-    
-            Serial.println();
-            digitalWrite(led_builtin, LOW);
-            digitalWrite(data_request_gpio, LOW);
+            if (Serial2.available()) {
+                Serial.println("Serial2 is available");
+                TelnetStream.println("Serial2 is available");
+                // unsigned long requestMillis = millis();
+
+                // turn on led to show data is available
+                digitalWrite(led_builtin, HIGH);
+                int return_byte;
+
+
+                while (Serial2.available())
+                {
+                    // Reads the telegram untill it finds a return character
+                    // That is after each line in the telegram
+                    memset(message, 0, message_length);
+                    // int len = Serial2.readBytesUntil('\n', message, message_length);
+
+                    // DO SOMETHING WITH message
+                    // Serial2.readBytes(message, message_length)
+                    // Serial.print(message)
+                    return_byte = Serial2.read();
+                    Serial.print(return_byte);
+                    // print_byte_in_hex(return_byte);
+
+
+                    // telegram[len] = '\n';
+                    // telegram[len + 1] = 0;
+
+                    // 
+                    // bool result = decodeTelegram(len + 1);
+                    // When the CRC is check which is also the end of the telegram
+                    // if valid decode return true
+                    // if (result)
+                    // {
+                    //     return true;
+                    // }
+                }
+        
+                Serial.println();
+                digitalWrite(data_request_gpio, LOW);
+                digitalWrite(led_builtin, LOW);
+
+            }
 
         }
+
 // solution from eps32_p1meter.ino / RosiersRobin
 //     if (Serial2.available())
 //     {
@@ -291,6 +310,7 @@ int readMessage() {
   // PrintMessageln("Done with reading from from serial port.");
   Serial.println("Done with reading from from serial port.");
   TelnetStream.println("Done with reading from from serial port.");
+
   return 0;
 }
 

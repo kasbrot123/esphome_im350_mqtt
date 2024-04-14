@@ -8,20 +8,25 @@
 
 #include <Arduino.h>
 #include <ArduinoOTA.h>
+//#include <WiFiNINA.h> // WiFiNINA
 #include <TelnetStream.h>
 #include <Crypto.h>
 #include <AES.h>
 #include <GCM.h> // Crypto, Rhys Weatherley
 #include <WiFi.h>
 #include "time.h"
-#include <PubSubClient.h> // PubSubClient
+#include <ArduinoMqttClient.h> // AruinoMqttClient
+
+//#include <PubSubClient.h> // PubSubClient
 
 #include "secrets.h"
 #include "settings.h"
 
 // MQTT settings
-WiFiClient espClient;
-PubSubClient client(espClient);
+WiFiClient wifiClient;
+MqttClient mqttClient(wifiClient);
+//WiFiClient espClient;
+//PubSubClient client(espClient);
 
 // NTP Settings
 struct tm ntpTime;
@@ -375,32 +380,32 @@ void parse_message(byte array[]) {
       Serial.printf("counter_reading_p_in: %d\n", counter_reading_p_in);
       TelnetStream.printf("counter_reading_p_in: %d\n", counter_reading_p_in);
       dtostrf(counter_reading_p_in, 10, 0, reading_p_in);
-      client.publish("ingmarsretro/SM_Kelag/Zaehler_Wirk_in", reading_p_in);
+      //client.publish("ingmarsretro/SM_Kelag/Zaehler_Wirk_in", reading_p_in);
 
       Serial.printf("counter_reading_p_out: %d\n", counter_reading_p_out);
       TelnetStream.printf("counter_reading_p_out: %d\n", counter_reading_p_out);
       dtostrf(counter_reading_p_out, 10, 0, reading_p_out);
-      client.publish("ingmarsretro/SM_Kelag/Zaehler_Wirk_out", reading_p_out);
+      //client.publish("ingmarsretro/SM_Kelag/Zaehler_Wirk_out", reading_p_out);
 
       Serial.printf("counter_reading_q_in: %d\n", counter_reading_q_in);
       TelnetStream.printf("counter_reading_q_in: %d\n", counter_reading_q_in);
       dtostrf(counter_reading_q_in, 10, 0, reading_q_in);
-      client.publish("ingmarsretro/SM_Kelag/Zaehler_Blind_in", reading_q_in);
+      //client.publish("ingmarsretro/SM_Kelag/Zaehler_Blind_in", reading_q_in);
 
       Serial.printf("counter_reading_q_out: %d\n", counter_reading_q_out);
       TelnetStream.printf("counter_reading_q_out: %d\n", counter_reading_q_out);
       dtostrf(counter_reading_q_out, 10, 0, reading_q_out);
-      client.publish("ingmarsretro/SM_Kelag/Zaehler_Blind_out", reading_q_out);
+      //client.publish("ingmarsretro/SM_Kelag/Zaehler_Blind_out", reading_q_out);
 
       Serial.printf("current_power_usage_in: %d\n", current_power_usage_in);
       TelnetStream.printf("current_power_usage_in: %d\n", current_power_usage_in);
       dtostrf(current_power_usage_in, 10, 0, power_in);
-      client.publish("ingmarsretro/SM_Kelag/WirkLeistung_in", power_in);
+      //client.publish("ingmarsretro/SM_Kelag/WirkLeistung_in", power_in);
 
       Serial.printf("current_power_usage_out: %d\n", current_power_usage_out);
       TelnetStream.printf("current_power_usage_out: %d\n", current_power_usage_out);
       dtostrf(current_power_usage_out, 10, 0, power_out);
-      client.publish("ingmarsretro/SM_Kelag/WirkLeistung_out", power_out);
+      //client.publish("ingmarsretro/SM_Kelag/WirkLeistung_out", power_out);
 }
 
 
@@ -424,18 +429,19 @@ void setup() {
     Serial2.begin(115200, SERIAL_8N1, uart2_rx_gpio, uart2_tx_gpio);
     pinMode(led_builtin, OUTPUT);
     pinMode(DEBUG_LED_WIFI_GPIO, OUTPUT);
+    digitalWrite(DEBUG_LED_WIFI_GPIO, HIGH);
     // pinMode(DEBUG_LED_SM1_GPIO, OUTPUT);
     // pinMode(DEBUG_LED_SM2_GPIO, OUTPUT);
-    pinMode(DATA_REQUEST_GPIO_SM1, OUTPUT);
-    pinMode(DATA_REQUEST_GPIO_SM2, OUTPUT);
+    //pinMode(DATA_REQUEST_GPIO_SM1, OUTPUT);
+    //pinMode(DATA_REQUEST_GPIO_SM2, OUTPUT);
 
-    digitalWrite(DEBUG_LED_WIFI_GPIO, HIGH);
-    digitalWrite(DEBUG_LED_SM1_GPIO, HIGH);
-    digitalWrite(DEBUG_LED_SM2_GPIO, HIGH);
-    delay(1000);
-    digitalWrite(DEBUG_LED_WIFI_GPIO, LOW);
-    digitalWrite(DEBUG_LED_SM1_GPIO, LOW);
-    digitalWrite(DEBUG_LED_SM2_GPIO, LOW);
+    //digitalWrite(DEBUG_LED_WIFI_GPIO, HIGH);
+    //digitalWrite(DEBUG_LED_SM1_GPIO, HIGH);
+    //digitalWrite(DEBUG_LED_SM2_GPIO, HIGH);
+    //delay(1000);
+    //digitalWrite(DEBUG_LED_WIFI_GPIO, LOW);
+    //digitalWrite(DEBUG_LED_SM1_GPIO, LOW);
+    //digitalWrite(DEBUG_LED_SM2_GPIO, LOW);
     
     //connect to WiFi
     // Configures static IP address
@@ -450,56 +456,65 @@ void setup() {
 
     while (WiFi.waitForConnectResult() != WL_CONNECTED) {
       Serial.println("Connection Failed! Rebooting...");
-      digitalWrite(DEBUG_LED_WIFI_GPIO, HIGH);
-      delay(5000);
       digitalWrite(DEBUG_LED_WIFI_GPIO, LOW);
+      delay(5000);
+      digitalWrite(DEBUG_LED_WIFI_GPIO, HIGH);
+      delay(500);
+      digitalWrite(DEBUG_LED_WIFI_GPIO, LOW);
+      delay(500);
       ESP.restart();
     }
 
     // mqtt client
-    client.setServer(MQTT_SERVER, MQTT_SERVER_PORT);
+    mqttClient.setUsernamePassword(MQTT_USER, MQTT_PASS);
+    if (!mqttClient.connect(MQTT_SERVER, MQTT_SERVER_PORT)) {
+      Serial.print("MQTT connection failed! Error code = ");
+      Serial.println(mqttClient.connectError());
+      while (1);
+    }
+    //client.setServer(MQTT_SERVER, MQTT_SERVER_PORT); // does not boot with 5.3V from the smart meter
     //client.setCallback(callback);  
 
     // Arduino Over The Air flashing
-    ArduinoOTA.setPort(3232); // Port defaults to 3232
-    ArduinoOTA.setHostname("sm_reader"); // Hostname defaults to esp3232-[MAC]
+    //ArduinoOTA.setPort(3232); // Port defaults to 3232
+    //ArduinoOTA.setHostname("sm_reader"); // Hostname defaults to esp3232-[MAC]
 
     // No authentication by default
-    if (protect_arduino_ota) {
-        ArduinoOTA.setPassword(ARDUINO_OTA_PASS);
-        // Password can be set with it's md5 value as well
-        // MD5(admin) = 21232f297a57a5a743894a0e4a801fc3
-        // ArduinoOTA.setPasswordHash("21232f297a57a5a743894a0e4a801fc3");
-    }
+    // if (protect_arduino_ota) {
+    //     ArduinoOTA.setPassword(ARDUINO_OTA_PASS);
+    //     // Password can be set with it's md5 value as well
+    //     // MD5(admin) = 21232f297a57a5a743894a0e4a801fc3
+    //     // ArduinoOTA.setPasswordHash("21232f297a57a5a743894a0e4a801fc3");
+    // }
 
-    ArduinoOTA
-        .onStart([]() {
-                String type;
-                if (ArduinoOTA.getCommand() == U_FLASH)
-                type = "sketch";
-                else // U_SPIFFS
-                type = "filesystem";
+    // ArduinoOTA
+    //     .onStart([]() {
+    //             String type;
+    //             if (ArduinoOTA.getCommand() == U_FLASH)
+    //             type = "sketch";
+    //             else // U_SPIFFS
+    //             type = "filesystem";
 
-                // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
-                Serial.println("Start updating " + type);
-                })
-    .onEnd([]() {
-            Serial.println("\nEnd");
-            })
-    .onProgress([](unsigned int progress, unsigned int total) {
-            Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
-            })
-    .onError([](ota_error_t error) {
-            Serial.printf("Error[%u]: ", error);
-            if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
-            else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
-            else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
-            else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
-            else if (error == OTA_END_ERROR) Serial.println("End Failed");
-            });
+    //             // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
+    //             Serial.println("Start updating " + type);
+    //             })
+    // .onEnd([]() {
+    //         Serial.println("\nEnd");
+    //         })
+    // .onProgress([](unsigned int progress, unsigned int total) {
+    //         Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+    //         })
+    // .onError([](ota_error_t error) {
+    //         Serial.printf("Error[%u]: ", error);
+    //         if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
+    //         else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
+    //         else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
+    //         else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
+    //         else if (error == OTA_END_ERROR) Serial.println("End Failed");
+    //         });
 
-    // init ArduinoOTA
-    ArduinoOTA.begin();
+    // // init ArduinoOTA
+    // ArduinoOTA.begin();
 
     // Good for debugging
     TelnetStream.begin();
@@ -518,54 +533,58 @@ void setup() {
 
 }
 
-void reconnect() {
-      // Loop until we're reconnected
-    while (WiFi.waitForConnectResult() != WL_CONNECTED) {
-        Serial.print("Wifi connection lost. Wait 5 s for connection...");
-        TelnetStream.print("Wifi connection lost. Wait 5 s for connection...");
-        digitalWrite(DEBUG_LED_WIFI_GPIO, HIGH);
-        delay(4000);
-        digitalWrite(DEBUG_LED_WIFI_GPIO, LOW);
-        delay(1000);
-    }
+// void reconnect() {
+//       // Loop until we're reconnected
+//     while (WiFi.waitForConnectResult() != WL_CONNECTED) {
+//         Serial.print("Wifi connection lost. Wait 5 s for connection...");
+//         TelnetStream.print("Wifi connection lost. Wait 5 s for connection...");
+//         //digitalWrite(DEBUG_LED_WIFI_GPIO, HIGH);
+//         delay(4000);
+//         //digitalWrite(DEBUG_LED_WIFI_GPIO, LOW);
+//         delay(1000);
+//     }
 
-    // reconnect mqtt
-    while (!client.connected()) {
-        Serial.print("Attempting MQTT connection...");
-        TelnetStream.print("Attempting MQTT connection...");
-        // Attempt to connect
-        if (client.connect(MQTT_CLIENT_NAME, MQTT_USER, MQTT_PASS)) {
-            Serial.println("MQTT connected.");
-            TelnetStream.println("MQTT connected.");
-            client.subscribe("homeassistant/esp32/output");
-        } else {
-            Serial.print("failed, rc=");
-            Serial.print(client.state());
-            Serial.println(", try again in 5 seconds");
-            TelnetStream.print("failed, rc=");
-            TelnetStream.print(client.state());
-            TelnetStream.println(", try again in 5 seconds");
-            // Wait 5 seconds before retrying
-            delay(5000);
-        }
-    }
-}
+//     // reconnect mqtt
+//     while (!client.connected()) {
+//         Serial.print("Attempting MQTT connection...");
+//         TelnetStream.print("Attempting MQTT connection...");
+//         // Attempt to connect
+//         if (client.connect(MQTT_CLIENT_NAME, MQTT_USER, MQTT_PASS)) {
+//             Serial.println("MQTT connected.");
+//             TelnetStream.println("MQTT connected.");
+//             client.subscribe("homeassistant/esp32/output");
+//         } else {
+//             Serial.print("failed, rc=");
+//             Serial.print(client.state());
+//             Serial.println(", try again in 5 seconds");
+//             TelnetStream.print("failed, rc=");
+//             TelnetStream.print(client.state());
+//             TelnetStream.println(", try again in 5 seconds");
+//             // Wait 5 seconds before retrying
+//             delay(5000);
+//         }
+//     }
+// }
 
 
 void loop() {
     // for updates
-    ArduinoOTA.handle();
+//    ArduinoOTA.handle();
 
     // if MQTT is not connected
-    if (!client.connected()) {
-        reconnect();
-    }
+    //if (!client.connected()) {
+    //    reconnect();
+    //}
+    mqttClient.poll();
 
 
     // Send RSSI of MQTT Server, so ESP is up
     char RSSIstr[8];
     dtostrf(WiFi.RSSI(), 1, 2, RSSIstr);
-    client.publish("homeassistant/esp", RSSIstr);
+    //client.publish("homeassistant/esp", RSSIstr);
+    mqttClient.beginMessage("homeassistant/esp");
+    mqttClient.print(RSSIstr);
+    mqttClient.endMessage();
     Serial.printf("RSSI: %d dBm\n", WiFi.RSSI());
     TelnetStream.printf("RSSI: %d dBm\n", WiFi.RSSI());
     Serial.println(WiFi.BSSIDstr());

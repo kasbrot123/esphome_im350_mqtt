@@ -8,33 +8,33 @@
 
 #include <Arduino.h>
 #include <ArduinoOTA.h>
-#include <SPI.h>
-#include <WiFiNINA.h>
+// #include <SPI.h>
+// #include <WiFiNINA.h>
 //#include <WiFiNINA.h> // WiFiNINA
 #include <TelnetStream.h>
 #include <Crypto.h>
 #include <AES.h>
 #include <GCM.h> // Crypto, Rhys Weatherley
 #include <WiFi.h>
+#include <PubSubClient.h> // PubSubClient
 #include "time.h"
 //#include <ArduinoMqttClient.h> // AruinoMqttClient
 
-#include <PubSubClient.h> // PubSubClient
 
 #include "secrets.h"
 #include "settings.h"
 
 // MQTT settings
-WiFiClient wifiClient;
-MqttClient mqttClient(wifiClient);
-//WiFiClient espClient;
-//PubSubClient client(espClient);
+// WiFiClient wifiClient;
+// MqttClient mqttClient(wifiClient);
+WiFiClient espClient;
+PubSubClient client(espClient);
 
-// NTP Settings
-// struct tm ntpTime;
-// uint8_t current_time_day;
-// uint8_t current_time_month;
-// uint16_t current_time_year;
+NTP Settings
+struct tm ntpTime;
+uint8_t current_time_day;
+uint8_t current_time_month;
+uint16_t current_time_year;
 
 // message date variables
 uint16_t message_year;
@@ -177,189 +177,144 @@ struct Vector_GCM {
 //   }
 // }
 
-// int readMessage(int data_request_gpio) {
-//     unsigned short serial_cnt = 0;
-//     // if (use_test_data == true) {
-//     //     Serial.println("USE TEST DATA IS ACTIVE!");
-//     //     TelnetStream.println("USE TEST DATA IS ACTIVE!");
-//     //     serial_cnt = 123;
-//     //     for (unsigned int i = 0; i < 123; i++) {
-//     //         message[i] = testData[i];
-//     //     }
-//     // }
+int readMessage(int data_request_gpio) {
+    unsigned short serial_cnt = 0;
+    // if (use_test_data == true) {
+    //     Serial.println("USE TEST DATA IS ACTIVE!");
+    //     TelnetStream.println("USE TEST DATA IS ACTIVE!");
+    //     serial_cnt = 123;
+    //     for (unsigned int i = 0; i < 123; i++) {
+    //         message[i] = testData[i];
+    //     }
+    // }
 
-//     // else {
+    // else {
 
-//     unsigned long time_start_reading = millis();
-//     long time_read_attempt = millis();
-//     unsigned long UART_TIMEOUT = 10000;
+    unsigned long time_start_reading = millis();
+    unsigned long UART_TIMEOUT = 10000;
 
-//     int cnt = 0;
-//     int readBuffer = 250;
+    // int cnt = 0;
+    // int readBuffer = 250;
 
-//     Serial.println("Try to read data from serial port.");
-//     TelnetStream.println("Try to read data from serial port.");
-//     Serial.println("Set Request Pin");
-//     TelnetStream.println("Set Request Pin");
-//     // set request pin to get data
+    Serial.println("Try to read data from serial port.");
+    TelnetStream.println("Try to read data from serial port.");
+    Serial.println("Set Request Pin");
+    TelnetStream.println("Set Request Pin");
+    // set request pin to get data
 
-//     digitalWrite(data_request_gpio, HIGH);
+    digitalWrite(data_request_gpio, HIGH);
+    // delay(delay_before_reading_data);
 
-//     // delay(delay_before_reading_data);
+    while (true) {
+        time_read_attempt = millis();
+        if ((time_read_attempt - time_start_reading) > UART_TIMEOUT) {
+            Serial.println("Timeout UART, no data received");
+            TelnetStream.println("Timeout UART, no data received");
+            return false;
+        }
+        if (Serial2.available()) {
+            Serial.println("Serial2 is available");
+            TelnetStream.println("Serial2 is available");
+            // unsigned long requestMillis = millis();
 
-
-//     while (true) {
-//         time_read_attempt = millis();
-//         if ((time_read_attempt - time_start_reading) > UART_TIMEOUT) {
-//             Serial.println("Timeout UART, no data received");
-//             TelnetStream.println("Timeout UART, no data received");
-//             return false;
-//             // break;
-//         }
-//         if (Serial2.available()) {
-//             Serial.println("Serial2 is available");
-//             TelnetStream.println("Serial2 is available");
-//             // unsigned long requestMillis = millis();
-
-//             // turn on led to show data is available
-//             // digitalWrite(led_builtin, HIGH);
-//             int return_byte;
+            // turn on led to show data is available
+            int return_byte;
 
 
-//             while (Serial2.available())
-//             {
-//                 // Reads the telegram untill it finds a return character
-//                 // That is after each line in the telegram
-//                 memset(message, 0, message_length);
-//                 // int len = Serial2.readBytesUntil('\n', message, message_length);
+            while (Serial2.available())
+            {
+                // Reads the telegram untill it finds a return character
+                // That is after each line in the telegram
+                memset(message, 0, message_length);
 
-//                 // DO SOMETHING WITH message
-//                 //Serial2.readBytes(message, message_length);
-//                 //Serial.print(message);
-//                 return_byte = Serial2.read();
-//                 Serial.print(return_byte, HEX);
-//                 TelnetStream.print(return_byte, HEX);
-//                 // print_byte_in_hex(return_byte);
+                // DO SOMETHING WITH message
+                //Serial2.readBytes(message, message_length);
+                // int len = Serial2.readBytesUntil('\n', message, message_length);
+                //Serial.print(message);
+                return_byte = Serial2.read();
+                Serial.print(return_byte, HEX);
+                TelnetStream.print(return_byte, HEX);
+                // print_byte_in_hex(return_byte);
 
+                // telegram[len] = '\n';
+                // telegram[len + 1] = 0;
 
-//                 // telegram[len] = '\n';
-//                 // telegram[len + 1] = 0;
+                // 
+                // bool result = decodeTelegram(len + 1);
+                // When the CRC is check which is also the end of the telegram
+                // if valid decode return true
+                // if (result)
+                // {
+                //     return true;
+                // }
+            }
 
-//                 // 
-//                 // bool result = decodeTelegram(len + 1);
-//                 // When the CRC is check which is also the end of the telegram
-//                 // if valid decode return true
-//                 // if (result)
-//                 // {
-//                 //     return true;
-//                 // }
-//             }
+            Serial.println();
+            digitalWrite(data_request_gpio, LOW);
+        }
 
-//             Serial.println();
-//             digitalWrite(data_request_gpio, LOW);
-//             digitalWrite(led_builtin, LOW);
+    }
 
-//         }
+    Serial.println("Done with reading from from serial port.");
+    TelnetStream.println("Done with reading from from serial port.");
 
-//     }
+    return true;
+}
 
-//     Serial.println("Done with reading from from serial port.");
-//     TelnetStream.println("Done with reading from from serial port.");
+void init_vector(Vector_GCM *vect, const char *Vect_name, byte *key_SM) {
+  vect->name = Vect_name;  // vector name
 
-//     return true;
+  // asign key
+  for (unsigned int i = 0; i < 16; i++) {
+    vect->key[i] = key_SM[i];
+  }
 
-// // solution from eps32_p1meter.ino / RosiersRobin
-// //     if (Serial2.available())
-// //     {
-// // #ifdef DEBUG
-// //         Serial.println("Serial2 is available");
-// //         Serial.println("Memset telegram");
-// // #endif
-// //         memset(telegram, 0, sizeof(telegram));
-// //         while (Serial2.available())
-// //         {
-// //             // Reads the telegram untill it finds a return character
-// //             // That is after each line in the telegram
-// //             int len = Serial2.readBytesUntil('\n', telegram, P1_MAXLINELENGTH);
-// //
-// //             telegram[len] = '\n';
-// //             telegram[len + 1] = 0;
-// //
-// //             bool result = decodeTelegram(len + 1);
-// //             // When the CRC is check which is also the end of the telegram
-// //             // if valid decode return true
-// //             if (result)
-// //             {
-// //                 return true;
-// //             }
-// //         }
-// //     }
+  // asign message to decrypt
+  for (unsigned int i = 0; i < 90; i++) {
+    vect->ciphertext[i] = message[i+30];
+  }
 
+  // what is authdata?
+  byte AuthData[] = {0xd0, 0xd1, 0xd2, 0xd3, 0xd4, 0xd5, 0xd6, 0xd7, 0xd8, 0xd9, 0xda, 0xdb, 0xdc, 0xdd, 0xde, 0xdf}; // fixed value, i got it from the gurus director software
+  for (int i = 0; i < 16; i++) {
+     vect->authdata[i] = AuthData[i];
+  }
 
-//         //
-//         // while ((Serial2.available()) && (cnt < readBuffer) && (millis()-requestMillis <= max_wait_time_for_reading_data)) {
-//         //   message[cnt] = Serial2.read();
-//         //   if (message[0] != start_byte && cnt == 0) {
-//         //     continue;
-//         //   }
-//         //   else {
-//         //     cnt++;
-//         //   }
-//         // }
+  for (int i = 0; i < 8; i++) {
+     vect->iv[i] = message[16+i]; // manufacturer + serialnumber 8 bytes
+  }
+  for (int i = 8; i < 12; i++) {
+    vect->iv[i] = message[18+i]; // frame counter
+  }
 
-//     // }
-// }
+  byte tag[12]; // 12x zero
+  for (int i = 0; i < 12; i++) {
+    vect->tag[i] = tag[i];
+  }
 
-// void init_vector(Vector_GCM *vect, const char *Vect_name, byte *key_SM) {
-//   vect->name = Vect_name;  // vector name
-//   for (unsigned int i = 0; i < 16; i++) {
-//     vect->key[i] = key_SM[i];
-//   }
+  vect->authsize = 16;
+  vect->datasize = 90;
+  vect->tagsize = 12;
+  vect->ivsize  = 12;
+}
 
-//   for (unsigned int i = 0; i < 90; i++) {
-//     vect->ciphertext[i] = message[i+30];
-//   }
-//   byte AuthData[] = {0xd0, 0xd1, 0xd2, 0xd3, 0xd4, 0xd5, 0xd6, 0xd7, 0xd8, 0xd9, 0xda, 0xdb, 0xdc, 0xdd, 0xde, 0xdf}; // fixed value, i got it from the gurus director software
+void decrypt_text(Vector_GCM *vect) {
+  gcmaes128 = new GCM<AES128>();
+  gcmaes128->setKey(vect->key, gcmaes128->keySize());
+  gcmaes128->setIV(vect->iv, vect->ivsize);
+  gcmaes128->decrypt((byte*)buffer, vect->ciphertext, vect->datasize);
 
-//   for (int i = 0; i < 16; i++) {
-//      vect->authdata[i] = AuthData[i];
-//   }
-
-//   for (int i = 0; i < 8; i++) {
-//      vect->iv[i] = message[16+i]; // manufacturer + serialnumber 8 bytes
-//   }
-//   for (int i = 8; i < 12; i++) {
-//     vect->iv[i] = message[18+i]; // frame counter
-//   }
-
-//   byte tag[12]; // 12x zero
-//   for (int i = 0; i < 12; i++) {
-//     vect->tag[i] = tag[i];
-//   }
-
-//   vect->authsize = 16;
-//   vect->datasize = 90;
-//   vect->tagsize = 12;
-//   vect->ivsize  = 12;
-// }
-
-// void decrypt_text(Vector_GCM *vect) {
-//   gcmaes128 = new GCM<AES128>();
-//   gcmaes128->setKey(vect->key, gcmaes128->keySize());
-//   gcmaes128->setIV(vect->iv, vect->ivsize);
-//   gcmaes128->decrypt((byte*)buffer, vect->ciphertext, vect->datasize);
-
-//   // this does not work...
-//   // bool decryption_failed = false;
-//   // if (!gcmaes128->checkTag(vect->tag, vect->tagsize)) {
-//   //   decryption_failed = true;
-//   //   Serial.println("Decryption Failed!");
-//   // }
-//   // else {
-//   //   Serial.println("Decryption OK!");
-//   // }
-//   delete gcmaes128;
-// }
+  // this does not work...
+  // bool decryption_failed = false;
+  // if (!gcmaes128->checkTag(vect->tag, vect->tagsize)) {
+  //   decryption_failed = true;
+  //   Serial.println("Decryption Failed!");
+  // }
+  // else {
+  //   Serial.println("Decryption OK!");
+  // }
+  delete gcmaes128;
+}
 
 // void parse_message(byte array[]) {
 //       counter_reading_p_in = byteToUInt32(array, 57);
@@ -424,19 +379,21 @@ struct Vector_GCM {
 void setup() {
 
     // disable bluetooth for security and power saving
-    //btStop();
+    btStop();
 
-    // Init serial and pins
+    // Init serial
     Serial.begin(115200);
-    //Serial2.begin(115200, SERIAL_8N1, uart2_rx_gpio, uart2_tx_gpio);
-    //pinMode(led_builtin, OUTPUT);
+    Serial2.begin(115200, SERIAL_8N1, uart2_rx_gpio, uart2_tx_gpio);
+
+    // Init pins
+    // pinMode(DATA_REQUEST_SM1_GPIO, OUTPUT);
+    // pinMode(DATA_REQUEST_SM2_GPIO, OUTPUT);
     pinMode(DEBUG_LED_WIFI_GPIO, OUTPUT);
     // pinMode(DEBUG_LED_SM1_GPIO, OUTPUT);
     // pinMode(DEBUG_LED_SM2_GPIO, OUTPUT);
-    //pinMode(DATA_REQUEST_GPIO_SM1, OUTPUT);
-    //pinMode(DATA_REQUEST_GPIO_SM2, OUTPUT);
 
-    //digitalWrite(DEBUG_LED_WIFI_GPIO, HIGH);
+    // test all LEDs
+    digitalWrite(DEBUG_LED_WIFI_GPIO, HIGH);
     //digitalWrite(DEBUG_LED_SM1_GPIO, HIGH);
     //digitalWrite(DEBUG_LED_SM2_GPIO, HIGH);
     //delay(1000);
@@ -449,10 +406,11 @@ void setup() {
        // if (!WiFi.config(local_IP, gateway, subnet, primaryDNS)) {
       //Serial.println("STA Failed to configure");
       //}
-    //WiFi.mode(WIFI_STA);   //station mode: the ESP32 connects to an access point
+
 
     // Connect to WiFi
     Serial.printf("Connecting to %s ", WIFI_SSID);
+    WiFi.mode(WIFI_STA);   //station mode: the ESP32 connects to an access point
     //delay(2000);
     // WiFi.setTxPower(WIFI_POWER_5dBm);
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -467,32 +425,22 @@ void setup() {
     // digitalWrite(DEBUG_LED_WIFI_GPIO, HIGH);
     
 
-    // while (WiFi.waitForConnectResult() != WL_CONNECTED) {
-    //   Serial.println("Connection Failed! Rebooting...");
-    //   digitalWrite(DEBUG_LED_WIFI_GPIO, LOW);
-    //   delay(5000);
-    //   digitalWrite(DEBUG_LED_WIFI_GPIO, HIGH);
-    //   delay(500);
-    //   digitalWrite(DEBUG_LED_WIFI_GPIO, LOW);
-    //   delay(500);
-    //   ESP.restart();
-    // }
+    while (WiFi.waitForConnectResult() != WL_CONNECTED) {
+      Serial.println("Connection Failed! Rebooting...");
+      digitalWrite(DEBUG_LED_WIFI_GPIO, HIGH);
+      delay(5000);
+      ESP.restart();
+    }
 
     // mqtt client
-    // mqttClient.setUsernamePassword(MQTT_USER, MQTT_PASS);
-    // if (!mqttClient.connect(MQTT_SERVER, MQTT_SERVER_PORT)) {
-    //   Serial.print("MQTT connection failed! Error code = ");
-    //   Serial.println(mqttClient.connectError());
-    //   while (1);
-    // }
-    //client.setServer(MQTT_SERVER, MQTT_SERVER_PORT); // does not boot with 5.3V from the smart meter
+    client.setServer(MQTT_SERVER, MQTT_SERVER_PORT); // does not boot with 5.3V from the smart meter
     //client.setCallback(callback);  
 
     // Arduino Over The Air flashing
     ArduinoOTA.setPort(3232); // Port defaults to 3232
-    ArduinoOTA.setHostname("sm_reader"); // Hostname defaults to esp3232-[MAC]
+    ArduinoOTA.setHostname(ARDUINO_OTA_HOSTNAME); // Hostname defaults to esp3232-[MAC]
 
-    // No authentication by default
+    // No authentication by default, 
     ArduinoOTA.setPassword(ARDUINO_OTA_PASS);
     // Password can be set with it's md5 value as well
     // MD5(admin) = 21232f297a57a5a743894a0e4a801fc3
@@ -524,10 +472,10 @@ void setup() {
             else if (error == OTA_END_ERROR) Serial.println("End Failed");
             });
 
-    // // // init ArduinoOTA
+    // init ArduinoOTA
     ArduinoOTA.begin();
 
-    // Good for debugging
+    // Telnet Stream for debugging without USB
     TelnetStream.begin();
 
     Serial.println("Wifi ready.");
@@ -537,45 +485,44 @@ void setup() {
     TelnetStream.print("IP address: ");
     TelnetStream.println(WiFi.localIP());
 
-    // //init and get the time
-    // configTime(gmtOffset_sec, daylightOffset_sec, ntp_server);
-    // getLocalTime();
-    // printLocalTime();
+    // init and get the time
+    configTime(gmtOffset_sec, daylightOffset_sec, ntp_server);
+    getLocalTime();
+    printLocalTime();
 
 }
 
-// void reconnect() {
-//       // Loop until we're reconnected
-//     while (WiFi.waitForConnectResult() != WL_CONNECTED) {
-//         Serial.print("Wifi connection lost. Wait 5 s for connection...");
-//         TelnetStream.print("Wifi connection lost. Wait 5 s for connection...");
-//         //digitalWrite(DEBUG_LED_WIFI_GPIO, HIGH);
-//         delay(4000);
-//         //digitalWrite(DEBUG_LED_WIFI_GPIO, LOW);
-//         delay(1000);
-//     }
+void reconnect() {
+    // test if WiFi is connected
+    if (WiFi.waitForConnectResult() != WL_CONNECTED) {
+        Serial.println("Connection Failed! Rebooting...");
+        TelnetStream.println("Connection Failed! Rebooting...");
+        digitalWrite(DEBUG_LED_WIFI_GPIO, HIGH);
+        delay(5000);
+        ESP.restart();
+    }
 
-//     // reconnect mqtt
-//     while (!client.connected()) {
-//         Serial.print("Attempting MQTT connection...");
-//         TelnetStream.print("Attempting MQTT connection...");
-//         // Attempt to connect
-//         if (client.connect(MQTT_CLIENT_NAME, MQTT_USER, MQTT_PASS)) {
-//             Serial.println("MQTT connected.");
-//             TelnetStream.println("MQTT connected.");
-//             client.subscribe("homeassistant/esp32/output");
-//         } else {
-//             Serial.print("failed, rc=");
-//             Serial.print(client.state());
-//             Serial.println(", try again in 5 seconds");
-//             TelnetStream.print("failed, rc=");
-//             TelnetStream.print(client.state());
-//             TelnetStream.println(", try again in 5 seconds");
-//             // Wait 5 seconds before retrying
-//             delay(5000);
-//         }
-//     }
-// }
+    // try to reconnect mqtt
+    while (!client.connected()) {
+        Serial.print("Attempting MQTT connection...");
+        TelnetStream.print("Attempting MQTT connection...");
+        // Attempt to connect
+        if (client.connect(MQTT_CLIENT_NAME, MQTT_USER, MQTT_PASS)) {
+            Serial.println("MQTT connected.");
+            TelnetStream.println("MQTT connected.");
+            client.subscribe("homeassistant/esp32/output");
+        } else {
+            Serial.print("failed, rc=");
+            Serial.print(client.state());
+            Serial.println(", try again in 5 seconds");
+            TelnetStream.print("failed, rc=");
+            TelnetStream.print(client.state());
+            TelnetStream.println(", try again in 5 seconds");
+            // Wait 5 seconds before retrying
+            delay(5000);
+        }
+    }
+}
 
 
 void loop() {
@@ -583,19 +530,19 @@ void loop() {
     ArduinoOTA.handle();
 
     // if MQTT is not connected
-    //if (!client.connected()) {
-    //    reconnect();
-    //}
-    // mqttClient.poll();
+    if (!client.connected()) {
+       reconnect();
+    }
+
+    //init and get the time
+    configTime(gmtOffset_sec, daylightOffset_sec, ntp_server);
+    getLocalTime();
+    printLocalTime();
 
 
     // Send RSSI of MQTT Server, so ESP is up
-    char RSSIstr[8];
     dtostrf(WiFi.RSSI(), 1, 2, RSSIstr);
-    //client.publish("homeassistant/esp", RSSIstr);
-    // mqttClient.beginMessage("homeassistant/esp");
-    // mqttClient.print(RSSIstr);
-    // mqttClient.endMessage();
+    client.publish("homeassistant/esp", RSSIstr);
     Serial.printf("RSSI: %d dBm\n", WiFi.RSSI());
     TelnetStream.printf("RSSI: %d dBm\n", WiFi.RSSI());
     Serial.println(WiFi.BSSIDstr());
@@ -603,6 +550,18 @@ void loop() {
 
 
     // READ DATA
+    readMessage(DATA_REQUEST_SM1_GPIO);
+    // check if message has start and stop byte, is valid
+    // print raw message, maybe debug mode
+    // init vector where all data is stored
+    // decrypt message -> stored in buffer
+    // parse message -> simple index in buffer array, 6 values + mqtt transmit
+
+      // always init in 
+      // init_vector(&Vector_SM,"Vector_SM",sm_decryption_key); 
+      // decrypt_text(&Vector_SM);
+      //
+
     // if (readMessage(DATA_REQUEST_GPIO_1)) {
         // decodeMessage();
         // parseMessage();
@@ -616,8 +575,6 @@ void loop() {
     //TelnetStream.println("new michi");
     //digitalWrite(DEBUG_LED_WIFI_GPIO, !digitalRead(DEBUG_LED_WIFI_GPIO));
     delay(1000);
-    Serial.println("reset");
-    TelnetStream.println("reset");
 
 
 
@@ -683,8 +640,4 @@ void loop() {
     //   printBytesToHex(message, (sizeof(message)/sizeof(message[0])));
     // }
 
-    //init and get the time
-    //configTime(gmtOffset_sec, daylightOffset_sec, ntp_server);
-    //getLocalTime();
-    //printLocalTime();
 }

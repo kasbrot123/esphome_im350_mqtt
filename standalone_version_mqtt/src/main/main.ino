@@ -8,6 +8,8 @@
 
 #include <Arduino.h>
 #include <ArduinoOTA.h>
+#include <SPI.h>
+#include <WiFiNINA.h>
 //#include <WiFiNINA.h> // WiFiNINA
 #include <TelnetStream.h>
 #include <Crypto.h>
@@ -15,9 +17,9 @@
 #include <GCM.h> // Crypto, Rhys Weatherley
 #include <WiFi.h>
 #include "time.h"
-#include <ArduinoMqttClient.h> // AruinoMqttClient
+//#include <ArduinoMqttClient.h> // AruinoMqttClient
 
-//#include <PubSubClient.h> // PubSubClient
+#include <PubSubClient.h> // PubSubClient
 
 #include "secrets.h"
 #include "settings.h"
@@ -429,7 +431,6 @@ void setup() {
     //Serial2.begin(115200, SERIAL_8N1, uart2_rx_gpio, uart2_tx_gpio);
     //pinMode(led_builtin, OUTPUT);
     pinMode(DEBUG_LED_WIFI_GPIO, OUTPUT);
-    digitalWrite(DEBUG_LED_WIFI_GPIO, HIGH);
     // pinMode(DEBUG_LED_SM1_GPIO, OUTPUT);
     // pinMode(DEBUG_LED_SM2_GPIO, OUTPUT);
     //pinMode(DATA_REQUEST_GPIO_SM1, OUTPUT);
@@ -452,8 +453,10 @@ void setup() {
 
     // Connect to WiFi
     Serial.printf("Connecting to %s ", WIFI_SSID);
-    delay(2000);
+    //delay(2000);
+    // WiFi.setTxPower(WIFI_POWER_5dBm);
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+    digitalWrite(DEBUG_LED_WIFI_GPIO, HIGH);
     
     // digitalWrite(DEBUG_LED_WIFI_GPIO, LOW);
     // delay(400);
@@ -609,8 +612,8 @@ void loop() {
 
     Serial.println("waiting 1 second...");
     TelnetStream.println("waiting 1 second...");
-    Serial.println("new michi");
-    TelnetStream.println("new michi");
+    // Serial.println("new michi");
+    //TelnetStream.println("new michi");
     //digitalWrite(DEBUG_LED_WIFI_GPIO, !digitalRead(DEBUG_LED_WIFI_GPIO));
     delay(1000);
     Serial.println("reset");

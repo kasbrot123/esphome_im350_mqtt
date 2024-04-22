@@ -3,7 +3,6 @@ int uart2_rx_gpio = 16;
 int uart2_tx_gpio = 17;
 
 // int data_request_gpio = 26;
-<<<<<<< HEAD
 int DEBUG_LED_WIFI_GPIO = 21;
 int DATA_REQUEST_SM1_GPIO = 100;
 int DATA_REQUEST_SM2_GPIO = 100;

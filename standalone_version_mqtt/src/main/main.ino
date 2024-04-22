@@ -8,9 +8,7 @@
 
 #include <Arduino.h>
 #include <ArduinoOTA.h>
-// #include <SPI.h>
-// #include <WiFiNINA.h>
-//#include <WiFiNINA.h> // WiFiNINA
+// #include <WiFiNINA.h> // WiFiNINA
 #include <TelnetStream.h>
 #include <Crypto.h>
 #include <AES.h>
@@ -30,11 +28,11 @@
 WiFiClient espClient;
 PubSubClient client(espClient);
 
-NTP Settings
-struct tm ntpTime;
-uint8_t current_time_day;
-uint8_t current_time_month;
-uint16_t current_time_year;
+// NTP Settings
+// struct tm ntpTime;
+// uint8_t current_time_day;
+// uint8_t current_time_month;
+// uint16_t current_time_year;
 
 // message date variables
 uint16_t message_year;
@@ -191,6 +189,7 @@ int readMessage(int data_request_gpio) {
     // else {
 
     unsigned long time_start_reading = millis();
+    unsigned long time_read_attempt;
     unsigned long UART_TIMEOUT = 10000;
 
     // int cnt = 0;
@@ -202,7 +201,7 @@ int readMessage(int data_request_gpio) {
     TelnetStream.println("Set Request Pin");
     // set request pin to get data
 
-    digitalWrite(data_request_gpio, HIGH);
+    //digitalWrite(data_request_gpio, HIGH);
     // delay(delay_before_reading_data);
 
     while (true) {
@@ -261,60 +260,60 @@ int readMessage(int data_request_gpio) {
     return true;
 }
 
-void init_vector(Vector_GCM *vect, const char *Vect_name, byte *key_SM) {
-  vect->name = Vect_name;  // vector name
+// void init_vector(Vector_GCM *vect, const char *Vect_name, byte *key_SM) {
+//   vect->name = Vect_name;  // vector name
 
-  // asign key
-  for (unsigned int i = 0; i < 16; i++) {
-    vect->key[i] = key_SM[i];
-  }
+//   // asign key
+//   for (unsigned int i = 0; i < 16; i++) {
+//     vect->key[i] = key_SM[i];
+//   }
 
-  // asign message to decrypt
-  for (unsigned int i = 0; i < 90; i++) {
-    vect->ciphertext[i] = message[i+30];
-  }
+//   // asign message to decrypt
+//   for (unsigned int i = 0; i < 90; i++) {
+//     vect->ciphertext[i] = message[i+30];
+//   }
 
-  // what is authdata?
-  byte AuthData[] = {0xd0, 0xd1, 0xd2, 0xd3, 0xd4, 0xd5, 0xd6, 0xd7, 0xd8, 0xd9, 0xda, 0xdb, 0xdc, 0xdd, 0xde, 0xdf}; // fixed value, i got it from the gurus director software
-  for (int i = 0; i < 16; i++) {
-     vect->authdata[i] = AuthData[i];
-  }
+//   // what is authdata?
+//   byte AuthData[] = {0xd0, 0xd1, 0xd2, 0xd3, 0xd4, 0xd5, 0xd6, 0xd7, 0xd8, 0xd9, 0xda, 0xdb, 0xdc, 0xdd, 0xde, 0xdf}; // fixed value, i got it from the gurus director software
+//   for (int i = 0; i < 16; i++) {
+//      vect->authdata[i] = AuthData[i];
+//   }
 
-  for (int i = 0; i < 8; i++) {
-     vect->iv[i] = message[16+i]; // manufacturer + serialnumber 8 bytes
-  }
-  for (int i = 8; i < 12; i++) {
-    vect->iv[i] = message[18+i]; // frame counter
-  }
+//   for (int i = 0; i < 8; i++) {
+//      vect->iv[i] = message[16+i]; // manufacturer + serialnumber 8 bytes
+//   }
+//   for (int i = 8; i < 12; i++) {
+//     vect->iv[i] = message[18+i]; // frame counter
+//   }
 
-  byte tag[12]; // 12x zero
-  for (int i = 0; i < 12; i++) {
-    vect->tag[i] = tag[i];
-  }
+//   byte tag[12]; // 12x zero
+//   for (int i = 0; i < 12; i++) {
+//     vect->tag[i] = tag[i];
+//   }
 
-  vect->authsize = 16;
-  vect->datasize = 90;
-  vect->tagsize = 12;
-  vect->ivsize  = 12;
-}
+//   vect->authsize = 16;
+//   vect->datasize = 90;
+//   vect->tagsize = 12;
+//   vect->ivsize  = 12;
+// }
 
-void decrypt_text(Vector_GCM *vect) {
-  gcmaes128 = new GCM<AES128>();
-  gcmaes128->setKey(vect->key, gcmaes128->keySize());
-  gcmaes128->setIV(vect->iv, vect->ivsize);
-  gcmaes128->decrypt((byte*)buffer, vect->ciphertext, vect->datasize);
+// void decrypt_text(Vector_GCM *vect) {
+//   gcmaes128 = new GCM<AES128>();
+//   gcmaes128->setKey(vect->key, gcmaes128->keySize());
+//   gcmaes128->setIV(vect->iv, vect->ivsize);
+//   gcmaes128->decrypt((byte*)buffer, vect->ciphertext, vect->datasize);
 
-  // this does not work...
-  // bool decryption_failed = false;
-  // if (!gcmaes128->checkTag(vect->tag, vect->tagsize)) {
-  //   decryption_failed = true;
-  //   Serial.println("Decryption Failed!");
-  // }
-  // else {
-  //   Serial.println("Decryption OK!");
-  // }
-  delete gcmaes128;
-}
+//   // this does not work...
+//   // bool decryption_failed = false;
+//   // if (!gcmaes128->checkTag(vect->tag, vect->tagsize)) {
+//   //   decryption_failed = true;
+//   //   Serial.println("Decryption Failed!");
+//   // }
+//   // else {
+//   //   Serial.println("Decryption OK!");
+//   // }
+//   delete gcmaes128;
+// }
 
 // void parse_message(byte array[]) {
 //       counter_reading_p_in = byteToUInt32(array, 57);
@@ -393,7 +392,7 @@ void setup() {
     // pinMode(DEBUG_LED_SM2_GPIO, OUTPUT);
 
     // test all LEDs
-    digitalWrite(DEBUG_LED_WIFI_GPIO, HIGH);
+    //digitalWrite(DEBUG_LED_WIFI_GPIO, HIGH);
     //digitalWrite(DEBUG_LED_SM1_GPIO, HIGH);
     //digitalWrite(DEBUG_LED_SM2_GPIO, HIGH);
     //delay(1000);
@@ -411,10 +410,11 @@ void setup() {
     // Connect to WiFi
     Serial.printf("Connecting to %s ", WIFI_SSID);
     WiFi.mode(WIFI_STA);   //station mode: the ESP32 connects to an access point
-    //delay(2000);
+    delay(2000);
     // WiFi.setTxPower(WIFI_POWER_5dBm);
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
     digitalWrite(DEBUG_LED_WIFI_GPIO, HIGH);
+    delay(1000);
     
     // digitalWrite(DEBUG_LED_WIFI_GPIO, LOW);
     // delay(400);
@@ -427,7 +427,7 @@ void setup() {
 
     while (WiFi.waitForConnectResult() != WL_CONNECTED) {
       Serial.println("Connection Failed! Rebooting...");
-      digitalWrite(DEBUG_LED_WIFI_GPIO, HIGH);
+      // digitalWrite(DEBUG_LED_WIFI_GPIO, HIGH);
       delay(5000);
       ESP.restart();
     }
@@ -486,18 +486,18 @@ void setup() {
     TelnetStream.println(WiFi.localIP());
 
     // init and get the time
-    configTime(gmtOffset_sec, daylightOffset_sec, ntp_server);
-    getLocalTime();
-    printLocalTime();
+    // configTime(gmtOffset_sec, daylightOffset_sec, ntp_server);
+    // getLocalTime();
+    // printLocalTime();
 
 }
 
 void reconnect() {
+    digitalWrite(DEBUG_LED_WIFI_GPIO, HIGH);
     // test if WiFi is connected
     if (WiFi.waitForConnectResult() != WL_CONNECTED) {
         Serial.println("Connection Failed! Rebooting...");
         TelnetStream.println("Connection Failed! Rebooting...");
-        digitalWrite(DEBUG_LED_WIFI_GPIO, HIGH);
         delay(5000);
         ESP.restart();
     }
@@ -535,14 +535,14 @@ void loop() {
     }
 
     //init and get the time
-    configTime(gmtOffset_sec, daylightOffset_sec, ntp_server);
-    getLocalTime();
-    printLocalTime();
+    // configTime(gmtOffset_sec, daylightOffset_sec, ntp_server);
+    // getLocalTime();
+    // printLocalTime();
 
 
     // Send RSSI of MQTT Server, so ESP is up
-    dtostrf(WiFi.RSSI(), 1, 2, RSSIstr);
-    client.publish("homeassistant/esp", RSSIstr);
+    //dtostrf(WiFi.RSSI(), 1, 2, RSSIstr);
+    //client.publish("homeassistant/esp", RSSIstr);
     Serial.printf("RSSI: %d dBm\n", WiFi.RSSI());
     TelnetStream.printf("RSSI: %d dBm\n", WiFi.RSSI());
     Serial.println(WiFi.BSSIDstr());
@@ -569,8 +569,11 @@ void loop() {
     // };
 
 
+    digitalWrite(DEBUG_LED_WIFI_GPIO, LOW);
     Serial.println("waiting 1 second...");
     TelnetStream.println("waiting 1 second...");
+    digitalWrite(DEBUG_LED_WIFI_GPIO, HIGH);
+
     // Serial.println("new michi");
     //TelnetStream.println("new michi");
     //digitalWrite(DEBUG_LED_WIFI_GPIO, !digitalRead(DEBUG_LED_WIFI_GPIO));

@@ -410,11 +410,10 @@ void setup() {
     // Connect to WiFi
     Serial.printf("Connecting to %s ", WIFI_SSID);
     WiFi.mode(WIFI_STA);   //station mode: the ESP32 connects to an access point
-    delay(2000);
     // WiFi.setTxPower(WIFI_POWER_5dBm);
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
     digitalWrite(DEBUG_LED_WIFI_GPIO, HIGH);
-    delay(1000);
+    delay(2000);
     
     // digitalWrite(DEBUG_LED_WIFI_GPIO, LOW);
     // delay(400);
@@ -427,7 +426,9 @@ void setup() {
 
     while (WiFi.waitForConnectResult() != WL_CONNECTED) {
       Serial.println("Connection Failed! Rebooting...");
-      // digitalWrite(DEBUG_LED_WIFI_GPIO, HIGH);
+      digitalWrite(DEBUG_LED_WIFI_GPIO, LOW);
+      delay(200);
+      digitalWrite(DEBUG_LED_WIFI_GPIO, HIGH);
       delay(5000);
       ESP.restart();
     }
@@ -493,7 +494,7 @@ void setup() {
 }
 
 void reconnect() {
-    digitalWrite(DEBUG_LED_WIFI_GPIO, HIGH);
+    digitalWrite(DEBUG_LED_WIFI_GPIO, LOW);
     // test if WiFi is connected
     if (WiFi.waitForConnectResult() != WL_CONNECTED) {
         Serial.println("Connection Failed! Rebooting...");
@@ -570,9 +571,10 @@ void loop() {
 
 
     digitalWrite(DEBUG_LED_WIFI_GPIO, LOW);
+    delay(1000);
+    digitalWrite(DEBUG_LED_WIFI_GPIO, HIGH);
     Serial.println("waiting 1 second...");
     TelnetStream.println("waiting 1 second...");
-    digitalWrite(DEBUG_LED_WIFI_GPIO, HIGH);
 
     // Serial.println("new michi");
     //TelnetStream.println("new michi");

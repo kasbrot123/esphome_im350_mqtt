@@ -550,7 +550,7 @@ void loop() {
 
 
     // READ DATA
-    readMessage(DATA_REQUEST_SM1_GPIO);
+    // readMessage(DATA_REQUEST_SM1_GPIO);
     // check if message has start and stop byte, is valid
     // print raw message, maybe debug mode
     // init vector where all data is stored

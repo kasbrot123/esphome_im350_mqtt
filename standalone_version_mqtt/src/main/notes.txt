@@ -1,0 +1,32 @@
+
+decryptBuffer (indizes, check the decryption with auth key)
+
+
+
+
+
+
+setup
+
+
+loop
+    
+    check if connected (WLAN, MQTT)
+
+
+    Readout
+
+    set pin
+    read serial in buffer
+    parse buffer (name,  )
+    decrypt data
+    parse data (parse function)
+    Send Mqtt
+    update 
+
+
+
+
+    delay(5s);
+
+

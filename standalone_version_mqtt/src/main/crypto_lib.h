@@ -98,7 +98,9 @@ int decryptBuffer(byte *key, byte *auth_key) {
     }
     for (int i = 0; i < 12; i++) {
         tag[i] = buffer[cyphertext_length+i];
+        Serial.print(buffer[cyphertext_length+i]);
     }
+    Serial.println();
 
     for (int i = 0; i < 12; i++) {
         if (init_vector[i] < 16) {Serial.print("0");}
@@ -110,18 +112,18 @@ int decryptBuffer(byte *key, byte *auth_key) {
     gcmaes128 = new GCM<AES128>();
     gcmaes128->setKey(key, KEY_LENGTH);
     gcmaes128->setIV(init_vector, buffer[1]+4);
-    gcmaes128->decrypt((byte*)plaintext, cyphertext, cyphertext_length);
     gcmaes128->addAuthData(auth_key, sizeof(auth_key));
+    gcmaes128->decrypt((byte*)plaintext, cyphertext, cyphertext_length);
 
     // this does not work...
     // bool decryption_failed = false;
-    // if (!gcmaes128->checkTag(tag, 12)) {
-    //   // decryption_failed = true;
-    //   Serial.println("Decryption Failed!");
-    // }
-    // else {
-    //   Serial.println("Decryption OK!");
-    // }
+    if (!gcmaes128->checkTag(tag, 12)) {
+      // decryption_failed = true;
+      Serial.println("Decryption Failed!");
+    }
+    else {
+      Serial.println("Decryption OK!");
+    }
     delete gcmaes128;
     return cyphertext_length;
 }
